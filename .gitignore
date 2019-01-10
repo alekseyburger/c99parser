@@ -1,0 +1,6 @@
+y.tab.*
+lex.yy.*
+*.o
+struct_parser.cc
+struct_parser.h
+struct_parser
