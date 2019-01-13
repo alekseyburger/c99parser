@@ -4,3 +4,4 @@ lex.yy.*
 struct_parser.cc
 struct_parser.h
 struct_parser
+.vscode/

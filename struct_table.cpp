@@ -1,145 +1,139 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <algorithm> 
+#include <iterator>
 
-class def_node {
-public:
-   enum types {NODEF, STRUCT};
+#include "struct_table.h"
+
+class variable {
+
 private:
-   enum types  type;
-   std::string name;
-
+   enum lextype ltype;
+   std::string  name;
+   std::string  type_name;
 public:
-   def_node(enum types  type, const char* name) :
-      type(type),
+   variable(enum lextype ltype, const char* name) :
+      ltype(ltype),
       name(name) {
    };
+   variable(const char* tname) :
+      ltype(NONE_L),
+      type_name(tname ? tname : "")
+   {};
+
+   void type_define(enum lextype nltype) {
+      if (ltype != NONE_L) {
+         std::cout << "type_define error" << "\n";
+         return;
+      }
+      ltype = nltype;
+   }
+
+   void subtype_define(variable* subtype) {
+      type_name = subtype->type_name;
+   }
+
+   std::string& get_type_name(void)
+   {
+      return type_name;
+   }
 
    friend std::ostream& operator<<(std::ostream& stream, 
-                     const def_node& node) {
-      stream << "struct " << node.name << " ";
+                     const variable& node) {
+      std::string text;
+      switch (node.ltype) { 
+      case NONE_L: text = "wrong"; break;
+      case INT_L: text = "int"; break;
+      case UINT_L: text = "unsigned int"; break;
+      case LONG_L: text = "long"; break;
+      case ULONG_L: text = "unsigned long"; break;
+      case LONG_LONG_L: text = "long"; break;
+      case ULONG_LONG_L: text = "unsigned long long"; break;
+      case STRUCT_L: text.append(std::string("struct "));
+         if (node.type_name.length()) text.append(node.type_name);
+         else { std::string s = std::to_string(reinterpret_cast<size_t>(&node));
+                 text.append("@").append(s); }
+         break;
+      case UNION_L: text.append(std::string("union "));
+         if (node.type_name.length()) text.append(node.type_name);
+         else { std::string s = std::to_string(reinterpret_cast<size_t>(&node));
+                 text.append("@").append(s); }
+         break;
+      }
+      stream << text << " " << node.name;
       return stream;
    };
 };
 
-std::vector<def_node*> defs;
+std::vector<variable*> user_type_stack;
+std::unordered_map<std::string,variable*> variables;
+std::unordered_map<std::string,variable*> user_types;
 
 #include <stdio.h>
 #include <string.h>
 
-#include "struct_table.h"
-
 extern "C"
 {
-   void struct_table_init(void) {}
-
-
-   
-   void struct_table_int(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-   void struct_table_uint(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-    void struct_table_long(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-    void struct_table_ulong(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-   void struct_table_long_long(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-   void struct_table_ulong_long(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }   
-   void struct_table_struct(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-      void struct_table_int_ptr(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-   void struct_table_uint_ptr(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-    void struct_table_long_ptr(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-    void struct_table_ulong_ptr(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-   void struct_table_long_long_ptr(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-   void struct_table_ulong_long_ptr(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }   
-   void struct_table_struct_ptr(const char* name) {
-      def_node* node = new def_node(def_node::STRUCT, name);
-      defs.push_back(node);
-   }
-extern void yyerror(const char *str);
-
-void def_user_type(sentence_t* sentence) {}
-void def_user_type_end(sentence_t* sentence) {}
-
-void def_variable(sentence_t* sentence) {
-        switch (sentence->type) {
-        case INT_L:
-                if (!sentence->is_ptr) {struct_table_int(sentence->name);}
-                else {struct_table_int_ptr(sentence->name);}
-                break;
-        case UINT_L:
-                if (!sentence->is_ptr) {struct_table_uint(sentence->name);}
-                else {struct_table_uint_ptr(sentence->name);}
-                break;
-        case LONG_L:
-                if (!sentence->is_ptr) {struct_table_long(sentence->name);}
-                else {struct_table_long_ptr(sentence->name);}
-                break;
-        case ULONG_L:
-                if (!sentence->is_ptr) {struct_table_ulong(sentence->name);}
-                else {struct_table_ulong_ptr(sentence->name);}
-                break;
-        case LONG_LONG_L:
-                if (!sentence->is_ptr) {struct_table_long_long(sentence->name);}
-                else {struct_table_long_long_ptr(sentence->name);}
-                break;
-        case ULONG_LONG_L:
-                if (!sentence->is_ptr) {struct_table_ulong_long(sentence->name);}
-                else {struct_table_ulong_long_ptr(sentence->name);}
-                break;
-        case STRUCT_L:
-                if (!sentence->is_ptr) {struct_table_struct(sentence->name ? sentence->name : "n/a");}
-                else {struct_table_struct_ptr(sentence->name ? sentence->name : "n/a");}
-                break;
-        case NONE_L:
-                yyerror("error: type is not defined\n");
-                break;
-        default:
-                yyerror("error: type is not expected\n");
-                break;
-        }
-       sentence_clean(sentence);
+extern sentence_t current;
+void struct_table_init(void)
+{
+   sentence_clean(&current);
 }
 
+extern void yyerror(const char *str);
 
-   void struct_table_run(void) {
-      for(auto node: defs) {
-         std::cout << *node << '\n';
-      }
-  }
+void apply_user_type(enum lextype ltype)
+{
+   
+   if (user_type_stack.empty()) {
+      std::cout << "apply_user_type error" << "\n";
+      return;
+   }
+   variable *var = user_type_stack.back();
+   //user_type_stack.pop_back();
+   var->type_define(ltype);
+   std::string  utype_name(var->get_type_name());
+   user_types.insert({utype_name, var});
+}
+
+void add_user_type(char* subtype_name)
+{
+   variable *var = new variable(subtype_name);
+   user_type_stack.push_back(var);
+}
+
+void add_variable(sentence_t* sentence) {
+   std::string name(sentence->name);
+
+   // check the name unique
+   if (variables.find(name) != variables.end()) {
+      std::cerr << "duplucate varible name " << name << std::endl;
+      sentence_clean(sentence);
+      return;
+   }
+
+   variable *var = new variable(sentence->type, sentence->name);
+   if (sentence->type == STRUCT_L || sentence->type == UNION_L) {
+      variable *user_type = user_type_stack.back();
+      user_type_stack.pop_back();
+      var->subtype_define(user_type);
+   }
+   variables.insert({name,var});
+
+   sentence_clean(sentence);
+}
+
+void struct_table_run(void) {
+   std::cout << "user_type_stack\n";
+   for_each (user_type_stack.begin(),  user_type_stack.end(),  [](variable* p) { std::cout << *p << '\n';} );
+   std::cout << "variables\n";
+   for_each (variables.begin(),  variables.end(),
+         [](std::pair<const std::basic_string<char>, variable*> &p) { std::cout << *p.second << '\n';} );
+   std::cout << "user_types\n";
+   for_each (user_types.begin(),  user_types.end(),
+         [](std::pair<const std::basic_string<char>, variable*> &p) { std::cout << *p.second << '\n';} );
+}
+
 }

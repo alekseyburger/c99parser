@@ -64,17 +64,17 @@ declaration:
         | struct_definition '*'  WORD { sentence_set_ptr(&current);
                                    sentence_set_type(&current, STRUCT_L);
                                    sentence_set_name(&current, $3); }
-        | union_definition WORD { sentence_set_type(&current, STRUCT_L); 
+        | union_definition WORD { sentence_set_type(&current, UNION_L); 
                                    sentence_set_name(&current, $2); }
         | union_definition '*' WORD { sentence_set_ptr(&current);
-                                   sentence_set_type(&current, STRUCT_L);
+                                   sentence_set_type(&current, UNION_L);
                                    sentence_set_name(&current, $3); }
         ;
 
 declaration_op:
-        declaration ';' { def_variable(&current); }
-        | struct_definition ';' { def_user_type_end(&current); }
-        | union_definition ';' { def_user_type_end(&current); }
+        declaration ';' { add_variable(&current); }                 /* <type_def> <name> ; */
+        | struct_definition ';' { /*add_user_type(&current);*/ }    /* struct { <elements> } ; */
+        | union_definition ';' { /*add_user_type(&current);*/ }     /* union { <elements> } */
         ;
 
 base_types:
@@ -88,15 +88,19 @@ base_types:
         ;
 
 struct_definition:
-        STRUCT_DEC optionaly_name '{' elements_declaration '}' { def_user_type(&current); }
+        STRUCT_DEC optionaly_name '{' elements_declaration '}' {
+                apply_user_type(STRUCT_L);
+                }
         ;
 
 union_definition:
-        UNION_DEC optionaly_name '{' elements_declaration '}' { def_user_type(&current); }
+        UNION_DEC optionaly_name '{' elements_declaration '}' {
+                apply_user_type(UNION_L);
+                }
         ;
 
-optionaly_name: /* it' not mandatory */
-        | WORD { sentence_set_name(&current, $1); }
+optionaly_name: /* it' not mandatory */ { add_user_type(0); }
+        | WORD { add_user_type($1); }
         ;
 
 elements_declaration: /* empty elements list */

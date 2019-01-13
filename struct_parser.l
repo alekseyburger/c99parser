@@ -18,8 +18,10 @@ union                   return UNION_DEC;
 
 [a-zA-Z][a-zA-Z0-9_]*    yylval.strptr = yytext; return WORD;
 
-\n                      /* игнорируем символ конца строки */;
-[ \t]+                  /* игнорируем пробелы и символы табуляции */;
+\/\/[\40-\176]*\n       /* ignore inline comment */
+\/\*[\01-\176]*\*\/     /* skip the multiline commment */
+\n                      /* ignore new line symbol */;
+[ \t]+                  /* ignore blank and tabulation */;
 
 .                       return (int) yytext[0];
 %%

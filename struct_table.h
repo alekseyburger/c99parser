@@ -4,8 +4,8 @@ extern "C"
 
 void struct_table_init(void);
 
-void def_variable(sentence_t* sentence);
-void def_user_type(sentence_t* sentence);
-void def_user_type_end(sentence_t* sentence);
+void add_variable(sentence_t* sentence);
+void apply_user_type(enum lextype ltype);
+void add_user_type(char*);
 void struct_table_run(void);
 }

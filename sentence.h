@@ -9,7 +9,8 @@ enum lextype {
       ULONG_L,
       LONG_LONG_L,
       ULONG_LONG_L,
-      STRUCT_L
+      STRUCT_L,
+      UNION_L
      };
 
 struct sentence_ {
