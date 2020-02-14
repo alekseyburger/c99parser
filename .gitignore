@@ -1,7 +1,10 @@
 y.tab.*
 lex.yy.*
 *.o
-struct_parser.cc
-struct_parser.h
-struct_parser
+core.*
+*~
+c99_parser
+c99_parser.cc
+c99_parser.h
+tmp.*
 .vscode/

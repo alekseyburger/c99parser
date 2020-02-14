@@ -7,133 +7,293 @@
 
 #include "struct_table.h"
 
-class variable {
+class user_type;
 
+class variable {
 private:
-   enum lextype ltype;
+   unsigned ltype;
    std::string  name;
-   std::string  type_name;
+   type_qualifier_t qualifier;
+   user_type* user_type_ptr;
 public:
-   variable(enum lextype ltype, const char* name) :
-      ltype(ltype),
-      name(name) {
+   variable(declaration_t& declaration) :
+      ltype {declaration.type},
+      name {declaration.name},
+      user_type_ptr {reinterpret_cast<user_type*>(declaration.user_type_ptr)}
+   {
+      qualifier = declaration.qualifier;
    };
+
    variable(const char* tname) :
-      ltype(NONE_L),
-      type_name(tname ? tname : "")
+      ltype(VOID)
    {};
 
-   void type_define(enum lextype nltype) {
-      if (ltype != NONE_L) {
-         std::cout << "type_define error" << "\n";
-         return;
-      }
-      ltype = nltype;
-   }
-
-   void subtype_define(variable* subtype) {
-      type_name = subtype->type_name;
-   }
-
-   std::string& get_type_name(void)
-   {
-      return type_name;
-   }
+   std::string to_string(void) const;
 
    friend std::ostream& operator<<(std::ostream& stream, 
                      const variable& node) {
-      std::string text;
-      switch (node.ltype) { 
-      case NONE_L: text = "wrong"; break;
-      case INT_L: text = "int"; break;
-      case UINT_L: text = "unsigned int"; break;
-      case LONG_L: text = "long"; break;
-      case ULONG_L: text = "unsigned long"; break;
-      case LONG_LONG_L: text = "long"; break;
-      case ULONG_LONG_L: text = "unsigned long long"; break;
-      case STRUCT_L: text.append(std::string("struct "));
-         if (node.type_name.length()) text.append(node.type_name);
-         else { std::string s = std::to_string(reinterpret_cast<size_t>(&node));
-                 text.append("@").append(s); }
-         break;
-      case UNION_L: text.append(std::string("union "));
-         if (node.type_name.length()) text.append(node.type_name);
-         else { std::string s = std::to_string(reinterpret_cast<size_t>(&node));
-                 text.append("@").append(s); }
-         break;
-      }
-      stream << text << " " << node.name;
+
+      stream << node.to_string();
       return stream;
    };
 };
 
-std::vector<variable*> user_type_stack;
+class user_type {
+private:
+   unsigned ltype;
+   std::string  name;
+   std::unordered_map<std::string,variable*> elements;
+public:
+   user_type(unsigned ltype) :
+      ltype(ltype)
+   {
+      char  name_buf[DECLARATION_NAME_LEN];
+      snprintf(name_buf, DECLARATION_NAME_LEN, "@%p", this);
+      name = name_buf;
+   };
+
+   user_type(unsigned ltype, const char* name) :
+      ltype(ltype),
+      name(name)
+   {
+   };
+
+   const std::string& get_name(void) const {return name;};
+   void set_name(const char* newname) 
+   {
+      name = newname;
+   };
+
+   // add new elemet to composite type
+   void insert(const std::pair<std::string, variable*> &element)
+   {
+      // TBD: check is it composite type
+      auto res = elements.insert(element);
+      if (!res.second) {
+         std::cerr << "duplucate element name " << element.first 
+         << "can't be added to "
+         << name
+         << std::endl;
+      }
+   };
+
+   std::string to_string(void) const;
+   std::string to_short_string(void) const;
+
+   friend std::ostream& operator<<(std::ostream& stream, 
+                     const user_type& node) {
+      return stream << node.to_string();
+   };
+};
+
+std::vector<user_type*> user_type_stack;
+
 std::unordered_map<std::string,variable*> variables;
-std::unordered_map<std::string,variable*> user_types;
+std::unordered_map<std::string,user_type*> user_types;
+
+std::string string_from_multi_text(std::vector<const char*> &type_as_multi_text)
+{
+      std::string type_as_text;
+
+      bool is_first = true;
+      for(auto &p : type_as_multi_text) {
+         if (!is_first) {
+            type_as_text += " ";
+         }
+         is_first = false;
+         type_as_text += p;
+      }
+
+      return type_as_text;
+}
+
+std::string variable::to_string(void) const {
+      
+   std::vector<const char*> type_as_multi_text;
+
+   if (qualifier.is_static) {type_as_multi_text.push_back("static");}
+   if (qualifier.is_extern) {type_as_multi_text.push_back("extern");}
+   if (qualifier.is_register) {type_as_multi_text.push_back("register");}
+
+   if (qualifier.is_const) {type_as_multi_text.push_back("const");}
+   if (qualifier.is_volotile) {type_as_multi_text.push_back("volotile");}   
+   if (qualifier.is_unsigned) {type_as_multi_text.push_back("unsigned");}
+   if (qualifier.is_long_long) {type_as_multi_text.push_back("long");}  
+
+   std::string user_type;
+
+   switch (ltype) { 
+   case VOID: type_as_multi_text.push_back("void"); break;
+   case CHAR: type_as_multi_text.push_back("char"); break;
+   case INT: type_as_multi_text.push_back("int"); break;
+   case SHORT: type_as_multi_text.push_back("short"); break;
+   case LONG: type_as_multi_text.push_back("long"); break;
+   case FLOAT: type_as_multi_text.push_back("float"); break;
+   case DOUBLE: type_as_multi_text.push_back("double"); break;
+   case TYPEDEF: // it is user defined type
+      user_type = user_type_ptr->to_short_string();
+      type_as_multi_text.push_back(user_type.c_str());
+      break;
+   default:
+      type_as_multi_text.push_back("[unexpected variable type]");
+      break;
+   }
+   type_as_multi_text.push_back(name.c_str());
+
+   return string_from_multi_text(type_as_multi_text);
+};
+
+std::string user_type::to_short_string(void) const {
+
+   std::vector<const char*> type_as_multi_text;
+
+   switch (ltype) { 
+   case STRUCT: type_as_multi_text.push_back("struct");
+      break;
+   case UNION: type_as_multi_text.push_back("union");
+      break;
+   default:
+      type_as_multi_text.push_back("[unexpected user type]");
+      break;
+   }
+   
+   type_as_multi_text.push_back(name.c_str());
+   return string_from_multi_text(type_as_multi_text); 
+}
+
+std::string user_type::to_string(void) const {
+
+   std::string type_as_text(to_short_string());
+   std::vector<const char*> type_as_multi_text;
+   type_as_multi_text.push_back(type_as_text.c_str());
+
+   type_as_multi_text.push_back("{");
+
+   bool is_cont = false;
+   std::string elements_as_text;
+   for_each (elements.begin(),  elements.end(),
+      [&](const std::pair<const std::basic_string<char>, variable*> &p) {
+         if (is_cont) { elements_as_text += ","; }
+         elements_as_text += p.second->to_string();
+         is_cont = true;
+      } );
+   type_as_multi_text.push_back(elements_as_text.c_str());
+   type_as_multi_text.push_back("}");
+   return string_from_multi_text(type_as_multi_text);
+}
 
 #include <stdio.h>
 #include <string.h>
 
 extern "C"
 {
-extern sentence_t current;
+extern declaration_t current;
 void struct_table_init(void)
 {
-   sentence_clean(&current);
+   declaration_clean(&current);
 }
 
 extern void yyerror(const char *str);
 
-void apply_user_type(enum lextype ltype)
+const bool IS_DEBUG = false;
+
+/*
+   Following functions provide C interface to tables
+*/
+void apply_user_type(unsigned ltype)
 {
-   
    if (user_type_stack.empty()) {
-      std::cout << "apply_user_type error" << "\n";
+      std::cerr << "apply_user_type error" << "\n";
       return;
    }
-   variable *var = user_type_stack.back();
-   //user_type_stack.pop_back();
-   var->type_define(ltype);
-   std::string  utype_name(var->get_type_name());
-   user_types.insert({utype_name, var});
 }
 
-void add_user_type(char* subtype_name)
+void add_user_type(unsigned ltype)
 {
-   variable *var = new variable(subtype_name);
-   user_type_stack.push_back(var);
+   user_type *type = new user_type(ltype);
+   user_type_stack.push_back(type);
+
+   if (IS_DEBUG) std::cout << "add_user_type: " << type->get_name() << std::endl;
 }
 
-void add_variable(sentence_t* sentence) {
-   std::string name(sentence->name);
+void finish_user_type_set_name(const char* name)
+{
+   // TBD: check is empty
+   user_type *type = user_type_stack.back();
+   user_type_stack.pop_back();
+   type->set_name(name);
+
+   user_types.insert({type->get_name(), type});
+
+   declaration_clean(&current);
+   declaration_set_user_type(&current, (void*)type);   
+}
+
+void finish_user_type(void)
+{
+   // TBD: check is empty
+   user_type *type = user_type_stack.back();
+   user_type_stack.pop_back();
+
+   user_types.insert({type->get_name(), type});
+
+   declaration_clean(&current);
+   declaration_set_user_type(&current, (void*)type);
+}
+
+void finish_user_type_from_table(void)
+{
+   // TBD: check is empty
+   user_type *type = user_type_stack.back();
+   user_type_stack.pop_back();
+}
+
+void add_element(declaration_t* declaration) {
+
+   std::string name(declaration->name);
+   if (IS_DEBUG) std::cout << "add_element: " << name << std::endl;
+   // TBD: check is empty
+   if (user_type_stack.empty()){
+      std::cerr << "add element: user_type_stack is empty" << std::endl;
+      declaration_clean(declaration);
+      return;
+   }
+   user_type *type = user_type_stack.back();
+
+   variable *var = new variable(*declaration);
+   type->insert({name,var});
+
+   // clean current element declaration
+   declaration_clean(declaration);
+}
+
+void add_variable(declaration_t* declaration) {
+   std::string name(declaration->name);
 
    // check the name unique
    if (variables.find(name) != variables.end()) {
       std::cerr << "duplucate varible name " << name << std::endl;
-      sentence_clean(sentence);
+      declaration_clean(declaration);
       return;
    }
 
-   variable *var = new variable(sentence->type, sentence->name);
-   if (sentence->type == STRUCT_L || sentence->type == UNION_L) {
-      variable *user_type = user_type_stack.back();
-      user_type_stack.pop_back();
-      var->subtype_define(user_type);
-   }
+   variable *var = new variable(*declaration);
    variables.insert({name,var});
 
-   sentence_clean(sentence);
+   if (IS_DEBUG) std::cout << "add varible name: " << *var << std::endl;
+
+   declaration_clean(declaration);
 }
 
 void struct_table_run(void) {
-   std::cout << "user_type_stack\n";
-   for_each (user_type_stack.begin(),  user_type_stack.end(),  [](variable* p) { std::cout << *p << '\n';} );
-   std::cout << "variables\n";
+
+   std::cout << "variables:\n";
    for_each (variables.begin(),  variables.end(),
-         [](std::pair<const std::basic_string<char>, variable*> &p) { std::cout << *p.second << '\n';} );
-   std::cout << "user_types\n";
+         [](std::pair<const std::basic_string<char>, variable*> &p) { std::cout << '\t' << *p.second << '\n';} );
+   
+   std::cout << "user_types:\n";
    for_each (user_types.begin(),  user_types.end(),
-         [](std::pair<const std::basic_string<char>, variable*> &p) { std::cout << *p.second << '\n';} );
+         [](std::pair<const std::basic_string<char>, user_type*> &p) { std::cout << '\t' << *p.second << '\n';} );
 }
 
-}
+} // extern "C"
