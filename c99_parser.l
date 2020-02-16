@@ -1,5 +1,5 @@
 /*
-  (C) Aleksey Burger
+  Aleksey Burger 2020
   c99 lexems definition
 */
 
@@ -46,7 +46,16 @@ while       return WHILE;
 
 [a-zA-Z][a-zA-Z0-9_]*    strncpy(yylval.str, yytext,ID_MAME_LEN); return ID;  /* identifier */
 
-(0x)?[0-9]+([uU]|[lL]|[uU][lL]|[lL][uU])?  return ICONST;    /* integer literal */
+(0x)?[0-9]+([uU]|[lL]|[uU][lL]|[lL][uU])?       { return ICONST; }   /* integer literal TBD: set value */
+
+[0-9]+e(\+|\-)?[0-9]+([lL]|[fF])?               { return FCONST;} /* Floating literal TBD */
+[0-9]+\.[0-9]*(e(\+|\-)?[0-9]+)?([lL]|[fF])?    { return FCONST;} /* Floating literal TBD */
+
+\"([^\\\n]|(\\.))*?\"                           { return SCONST; } /* String literal TBD */
+
+'[\40-\176]'                                    { return CCONST; }   /* char literal TBD */
+'\\[abfnrtv]'                                   { return CCONST; }   /* char literal TBD */
+'\\([0-7]{1,3})'                                { return CCONST; }  /* char literal TBD */
 
 \+    return PLUS;  // Operators
 \-   return MINUS;
@@ -69,6 +78,24 @@ while       return WHILE;
 ==    return EQ;
 !=    return NE;
 
+=  return EQUALS;   // Assignment
+\*= return TIMESEQUAL;
+\/= return DIVEQUAL;
+\%= return MODEQUAL;
+\+= return PLUSEQUAL;
+\-= return MINUSEQUAL;
+\\<\<= return LSHIFTEQUAL;
+\>\>= return RSHIFTEQUAL;
+&= return ANDEQUAL;
+\^= return XOREQUAL;
+\|= return OREQUAL;
+
+\+\+  return PLUSPLUS;  // Increment/decrement
+\-\-  return MINUSMINUS;
+
+\-\>  return ARROW;
+
+\?  return CONDOP;
 \( return LPAREN; // Delimeters
 \) return RPAREN;
 \[ return LBRACKET;
@@ -79,8 +106,9 @@ while       return WHILE;
 \. return PERIOD;
 ; return SEMI;
 : return COLON;
+\.\.\. return ELLIPSIS;
 
-= return EQUALS;
+#(.)*?\n /* ignore preprocessor directives */
 
 \/\/[\40-\176]*\n       /* ignore inline comment */
 \/\*[\01-\176]*\*\/     /* skip the multiline commment */
@@ -89,125 +117,3 @@ while       return WHILE;
 
 .                       return (int) yytext[0];
 %%
-
-/*
-    # Literals (identifier, integer constant, float constant, string constant,
-    # char const)
-
-# Integer literal
-t_ICONST = r'\d+([uU]|[lL]|[uU][lL]|[lL][uU])?'
-
-# Floating literal
-t_FCONST = r'((\d+)(\.\d+)(e(\+|-)?(\d+))? | (\d+)e(\+|-)?(\d+))([lL]|[fF])?'
-
-# String literal
-t_SCONST = r'\"([^\\\n]|(\\.))*?\"'
-
-# Character constant 'c' or L'c'
-t_CCONST = r'(L)?\'([^\\\n]|(\\.))*?\''  
-    'TYPEID', 
-    'ICONST', 
-    'FCONST', 
-    'SCONST', 
-    'CCONST',
-
-    # Assignment (=, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=)
-    'EQUALS', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL', 'PLUSEQUAL', 'MINUSEQUAL',
-    'LSHIFTEQUAL', 'RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL', 'OREQUAL',
-
-    # Increment/decrement (++,--)
-    'PLUSPLUS', 'MINUSMINUS',
-
-    # Structure dereference (->)
-    'ARROW',
-
-    # Conditional operator (?)
-    'CONDOP',
-
-
-
-    # Ellipsis (...)
-    'ELLIPSIS',
-)
-
-# Completely ignored characters
-t_ignore = ' \t\x0c'
-
-# Newlines
-
-
-def t_NEWLINE(t):
-    r'\n+'
-    t.lexer.lineno += t.value.count("\n")
-
-
-
-# Assignment operators
-
-t_EQUALS = r'='
-t_TIMESEQUAL = r'\*='
-t_DIVEQUAL = r'/='
-t_MODEQUAL = r'%='
-t_PLUSEQUAL = r'\+='
-t_MINUSEQUAL = r'-='
-t_LSHIFTEQUAL = r'<<='
-t_RSHIFTEQUAL = r'>>='
-t_ANDEQUAL = r'&='
-t_OREQUAL = r'\|='
-t_XOREQUAL = r'\^='
-
-# Increment/decrement
-t_PLUSPLUS = r'\+\+'
-t_MINUSMINUS = r'--'
-
-# ->
-t_ARROW = r'->'
-
-# ?
-t_CONDOP = r'\?'
-
-# Delimeters
-t_LPAREN = r'\('
-t_RPAREN = r'\)'
-t_LBRACKET = r'\['
-t_RBRACKET = r'\]'
-t_LBRACE = r'\{'
-t_RBRACE = r'\}'
-t_COMMA = r','
-t_PERIOD = r'\.'
-t_SEMI = r';'
-t_COLON = r':'
-t_ELLIPSIS = r'\.\.\.'
-
-# Identifiers and reserved words
-
-reserved_map = {}
-for r in reserved:
-    reserved_map[r.lower()] = r
-
-
-
-
-# Comments
-
-
-def t_comment(t):
-    r'/\*(.|\n)*?\/'ABURGER
-    t.lexer.lineno += t.value.count('\n')
-
-# Preprocessor directive (ignored)
-
-
-def t_preprocessor(t):
-    r'\#(.)*?\n'
-    t.lexer.lineno += 1
-
-
-def t_error(t):
-    print("Illegal character %s" % repr(t.value[0]))
-    t.lexer.skip(1)
-
-lexer = lex.lex()
-if __name__ == "__main__":
-    lex.runmain(lexer)
-*/
