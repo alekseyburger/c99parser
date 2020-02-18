@@ -3,7 +3,7 @@ lex.yy.*
 *.o
 core.*
 *~
-c99_parser
+c99parser
 c99_parser.cc
 c99_parser.h
 tmp.*

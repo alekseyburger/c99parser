@@ -1,10 +1,11 @@
-// get lexem code fom folowing
-#include "c99_parser.h"
+#ifndef DECLARATION_DEF
+#define DECLARATION_DEF
 
 #define false 0
 #define true (!false)
 
 typedef struct type_qualifier_ {
+    int is_typedef:1;
     int is_const:1;
     int is_volotile:1;
     int is_long_long:1;     
@@ -13,6 +14,8 @@ typedef struct type_qualifier_ {
     int is_static:1;
     int is_extern:1;
 } type_qualifier_t;
+
+void qualifier_clean (type_qualifier_t* self);
 
 #define DECLARATION_NAME_LEN  256
 struct declaration_ {
@@ -33,3 +36,6 @@ void declaration_set_ptr (declaration_t* self);
 void declaration_set_name (declaration_t* self, const char* name);
 
 void declaration_print_char(const char* c);
+
+const char* ltype_to_text(unsigned ltype);
+#endif

@@ -8,6 +8,7 @@
 
 extern YYSTYPE yylval;
 
+extern void* find_typedef(char*);
 %}
 
 %%
@@ -44,7 +45,7 @@ void        return VOID;
 volatile    return VOLATILE;
 while       return WHILE;
 
-[a-zA-Z][a-zA-Z0-9_]*    strncpy(yylval.str, yytext,ID_MAME_LEN); return ID;  /* identifier */
+[a-zA-Z][a-zA-Z0-9_]*    { strncpy(yylval.str, yytext, ID_MAME_LEN); void* type_ptr=find_typedef(yylval.str); if(type_ptr){ yylval.type_ptr=type_ptr; return TYPEID;} else {return ID;} } /* identifier */
 
 (0x)?[0-9]+([uU]|[lL]|[uU][lL]|[lL][uU])?       { return ICONST; }   /* integer literal TBD: set value */
 
@@ -55,7 +56,7 @@ while       return WHILE;
 
 '[\40-\176]'                                    { return CCONST; }   /* char literal TBD */
 '\\[abfnrtv]'                                   { return CCONST; }   /* char literal TBD */
-'\\([0-7]{1,3})'                                { return CCONST; }  /* char literal TBD */
+'\\([0-7]{1,3})'                                { return CCONST; }  /* char literal TBD */ 
 
 \+    return PLUS;  // Operators
 \-   return MINUS;

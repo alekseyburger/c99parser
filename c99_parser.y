@@ -28,7 +28,9 @@ main()
 
         yyparse();        // parse input and push info to store
 
-        struct_table_run();  // process with parser results
+        show_variable_table();  // process with parser results
+        show_types_table();
+        show_typedefs_table();
 }
 
 }
@@ -129,11 +131,13 @@ main()
 #define ID_MAME_LEN 256
 
         unsigned unumber;
-        char    str[ID_MAME_LEN];
+        char     str[ID_MAME_LEN];
+        void*    type_ptr;
 }
 
 %token <number> ICONST
 %token <str> ID
+%token <type_ptr> TYPEID
 
 %%
 translation_unit : external_declaration
@@ -167,10 +171,10 @@ declaration_specifiers : storage_class_specifier declaration_specifiers
     ;
 
 storage_class_specifier : AUTO
-    | REGISTER  { declaration_set_type(&current,REGISTER); }
-    | STATIC    { declaration_set_type(&current,STATIC); }
-    | EXTERN    { declaration_set_type(&current,EXTERN); }
-    | TYPEDEF
+    | REGISTER  { declaration_set_qualifier(&current,REGISTER); }
+    | STATIC    { declaration_set_qualifier(&current,STATIC); }
+    | EXTERN    { declaration_set_qualifier(&current,EXTERN); }
+    | TYPEDEF   { declaration_set_qualifier(&current,TYPEDEF); }
     ;
 
 type_specifier : VOID   { declaration_set_type(&current, VOID); }
@@ -184,7 +188,7 @@ type_specifier : VOID   { declaration_set_type(&current, VOID); }
     | UNSIGNED          { declaration_set_qualifier(&current, UNSIGNED); }
     | struct_or_union_specifier
     | enum_specifier
-    | TYPEID
+    | TYPEID            { declaration_set_user_type(&current, $1); }
     ;
 
 type_qualifier : CONST
@@ -205,8 +209,8 @@ struct_or_union_specifier : struct_or_union ID LBRACE struct_declaration_list RB
         }
     ;
 
-struct_or_union : STRUCT    { add_user_type(STRUCT);}
-    | UNION                 { add_user_type(UNION); }
+struct_or_union : STRUCT    { declaration_set_type(&current,STRUCT);add_user_type(&current);}
+    | UNION                 { declaration_set_type(&current,UNION); add_user_type(&current);}
     ;
 
 struct_declaration_list : struct_declaration
@@ -258,7 +262,7 @@ declarator : pointer direct_declarator
     | direct_declarator
     ;
 
-direct_declarator : ID { declaration_set_name(&current, $1); }
+direct_declarator : ID  { declaration_set_name(&current, $1);}
     | LPAREN declarator RPAREN
     | direct_declarator LBRACKET constant_expression_opt RBRACKET
     | direct_declarator LPAREN parameter_type_list RPAREN 
