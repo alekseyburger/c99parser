@@ -1,17 +1,23 @@
+/*
+*
+* Aleksey Burger (alekseyburger@gmail.com) 2020
+* License: BSD
+*/
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <list>
+#include <memory>
 
-extern "C"
-{
 #include "declaration.h"
-}
+#include "variable.h"
+
 // get lexem code fom folowing
 #include "c99_parser.h"
 
-#ifndef USER_TYPE_DEF
-#define USER_TYPE_DEF
+#ifndef _USER_TYPE_
+#define _USER_TYPE_
 
 class variable;
 
@@ -20,7 +26,7 @@ protected:
    unsigned ltype;
    std::string  name;
    type_qualifier_t qualifier;
-   std::vector<variable*> elements;
+   std::vector<std::unique_ptr<variable>> elements;
    user_type* typedef_ptr;
 public:
    user_type(declaration_t& declaration)
@@ -49,51 +55,20 @@ public:
       return &qualifier;
    };
 
-
    // add new elemet to composite type
-   void insert(variable* element)
+   void addElemant(variable* element)
    {
-      // TBD: check is it composite type
-      this->elements.push_back(element);
+      this->elements.push_back(std::unique_ptr<variable>{element});
    };
 
    void reconstruct_declaration(declaration_t* declaration) const;
+   declaration_t get_declaration(void) const;
 
    std::string to_string(void) const;
    std::string to_short_string(void) const;
 
    friend std::ostream& operator<<(std::ostream& stream, 
                      const user_type& node) {
-      return stream << node.to_string();
-   };
-};
-
-class type_def {
-protected:
-   unsigned ltype;
-   std::string  name;
-   type_qualifier_t qualifier;
-   user_type* user_type_ptr;
-   type_def*  type_def_ptr;
-public:
-   type_def(declaration_t& declaration)
-   {
-      ltype = declaration.type;
-      name = declaration.name;
-      qualifier = declaration.qualifier;
-
-      if (ltype == STRUCT || ltype == UNION) {
-         user_type_ptr = reinterpret_cast<user_type*>(declaration.user_type_ptr);
-      } else if (ltype == TYPEDEF) {
-         type_def_ptr = reinterpret_cast<type_def*>(declaration.user_type_ptr);
-      }
-   };
-
-   std::string to_string(void) const;
-   std::string to_short_string(void) const;
-
-   friend std::ostream& operator<<(std::ostream& stream, 
-                     const type_def& node) {
       return stream << node.to_string();
    };
 };

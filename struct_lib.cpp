@@ -1,3 +1,9 @@
+/*
+*
+* Aleksey Burger (alekseyburger@gmail.com) 2020
+* License: BSD
+*/
+
 #include "struct_lib.h"
 
 std::string string_from_multi_text(std::vector<const char*> &type_as_multi_text)

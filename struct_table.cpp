@@ -1,3 +1,9 @@
+/*
+* Variable tables mamagemant
+*
+* Aleksey Burger (alekseyburger@gmail.com) 2020 
+* License: BSD
+*/
 
 #include <algorithm> 
 #include <iterator>
@@ -6,7 +12,7 @@
 
 #include "variable.h"
 #include "user_type.h"
-
+#include "type_def.h"
 #include "struct_table.h"
 
 
@@ -15,8 +21,6 @@ std::vector<user_type*> user_type_stack;
 std::unordered_map<std::string,variable*> variables;
 std::unordered_map<std::string,user_type*> user_types;
 std::map<std::string,type_def*> typedefs;
-
-//#include <stdio.h>
 
 extern "C"
 {
@@ -64,7 +68,6 @@ void finish_user_type_set_name(const char* name)
    user_types.insert({type->get_name(), type});
 
    type->reconstruct_declaration(&current);
-   //declaration_set_user_type(&current, (void*)type);
 }
 
 void finish_user_type(void)
@@ -80,7 +83,6 @@ void finish_user_type(void)
 
    // reset current declaration as struct/union
    type->reconstruct_declaration(&current);
-   //declaration_set_user_type(&current, (void*)type);
 }
 
 void finish_user_type_from_table(void)
@@ -106,7 +108,7 @@ void add_element(declaration_t* declaration) {
    user_type *composit_type = user_type_stack.back();
 
    variable *var = new variable(*declaration);
-   composit_type->insert(var);
+   composit_type->addElemant(var);
    if (IS_DEBUG) std::cout << "add_element: " << *var << std::endl;
 
    // clean current element declaration
@@ -142,7 +144,7 @@ void add_variable(declaration_t* declaration) {
 }
 
 /*
-* try to find name_c in user_types table as typedef. If found return
+* try to find name_c in typesdefs table as typedef. If found return
 * pointer to type. Otherwise NULL;
 */
 void* find_typedef(char* name_c){
@@ -158,6 +160,22 @@ void* find_typedef(char* name_c){
    return NULL;
 }
 
+/*
+* try to find name_c in user_types table as typedef. If found return
+* pointer to type. Otherwise NULL;
+*/
+void* find_struct_union(char* name_c) {
+   std::string name(name_c);
+
+   // std::unordered_map<std::string,user_type*>::iterator 
+   auto iter = user_types.find(name);
+   if (iter  != user_types.end()) {
+      if (IS_DEBUG) std::cout << "found struct/union name: " << name  << std::endl;
+      return (void*) &(*iter->second);
+   }
+   if (IS_DEBUG) std::cout << "NOT found struct/union name: " << name << std::endl;
+   return NULL;
+}
 void show_variable_table(void) {
 
    std::cout << "variables:\n";

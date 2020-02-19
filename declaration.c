@@ -1,3 +1,10 @@
+/*
+* Variable properties (parser output)
+* 
+* Aleksey Burger (alekseyburger@gmail.com) 2020
+* License: BSD
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -19,6 +26,7 @@ void qualifier_clean (type_qualifier_t* self) {
     self->is_long_long =
     self->is_unsigned = 
     self->is_register =
+    self->is_auto =
     self->is_static =
     self->is_extern = false;
 }
@@ -50,8 +58,6 @@ void declaration_set_type (declaration_t* self, unsigned type) {
 }
 
 void declaration_set_user_type (declaration_t* self, void* user_type_ptr) {
-
-    self->type = TYPEDEF;
     self->user_type_ptr = user_type_ptr; // pointer to type_def
 }
 
@@ -75,6 +81,9 @@ void declaration_set_qualifier (declaration_t* self, unsigned qualifier) {
         break;
     case REGISTER:
         self->qualifier.is_register = true;
+        break;
+    case AUTO:
+        self->qualifier.is_auto = true;
         break;
     case STATIC:
         self->qualifier.is_static = true;

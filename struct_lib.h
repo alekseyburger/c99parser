@@ -1,3 +1,9 @@
+/*
+*
+* Aleksey Burger (alekseyburger@gmail.com) 2020
+* License: BSD
+*/
+
 #include <string>
 #include <vector>
 

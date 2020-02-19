@@ -1,5 +1,16 @@
-#ifndef DECLARATION_DEF
-#define DECLARATION_DEF
+/*
+* Variable properties (parser output)
+*
+* Aleksey Burger (alekseyburger@gmail.com) 2020
+* License: BSD
+*/
+
+#ifndef _DECLARATION_
+#define _DECLARATION_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define false 0
 #define true (!false)
@@ -11,6 +22,7 @@ typedef struct type_qualifier_ {
     int is_long_long:1;     
     int is_unsigned:1;
     int is_register:1;
+    int is_auto:1;
     int is_static:1;
     int is_extern:1;
 } type_qualifier_t;
@@ -38,4 +50,9 @@ void declaration_set_name (declaration_t* self, const char* name);
 void declaration_print_char(const char* c);
 
 const char* ltype_to_text(unsigned ltype);
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif  //_DECLARATION_

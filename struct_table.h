@@ -1,3 +1,10 @@
+/*
+* Variable tables mamagemant
+*
+* Aleksey Burger (alekseyburger@gmail.com) 2020
+* License: BSD
+*/
+
 #ifndef STRUCT_TABLE_DEF
 #define STRUCT_TABLE_DEF
 
@@ -21,6 +28,7 @@ void finish_user_type_from_table(void);
 void add_element(declaration_t* declaration);
 
 void* find_typedef(char*);
+void* find_struct_union(char* name_c);
 }
 
 #endif

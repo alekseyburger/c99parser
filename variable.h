@@ -1,12 +1,16 @@
+/*
+*
+* Aleksey Burger (alekseyburger@gmail.com) 2020
+* License: BSD
+*/
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <list>
 
-extern "C"
-{
 #include "declaration.h"
-}
+
 // get lexem code fom folowing
 #include "c99_parser.h"
 

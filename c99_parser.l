@@ -1,6 +1,8 @@
 /*
-  Aleksey Burger 2020
   c99 lexems definition
+
+  Aleksey Burger (alekseyburger@gmail.com) 2020
+  License: BSD
 */
 
 %{
@@ -9,6 +11,7 @@
 extern YYSTYPE yylval;
 
 extern void* find_typedef(char*);
+extern void* find_struct_union(char* name_c);
 %}
 
 %%

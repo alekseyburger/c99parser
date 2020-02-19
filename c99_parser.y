@@ -170,7 +170,7 @@ declaration_specifiers : storage_class_specifier declaration_specifiers
     | type_qualifier
     ;
 
-storage_class_specifier : AUTO
+storage_class_specifier : AUTO { declaration_set_qualifier(&current,AUTO); }
     | REGISTER  { declaration_set_qualifier(&current,REGISTER); }
     | STATIC    { declaration_set_qualifier(&current,STATIC); }
     | EXTERN    { declaration_set_qualifier(&current,EXTERN); }
@@ -188,7 +188,7 @@ type_specifier : VOID   { declaration_set_type(&current, VOID); }
     | UNSIGNED          { declaration_set_qualifier(&current, UNSIGNED); }
     | struct_or_union_specifier
     | enum_specifier
-    | TYPEID            { declaration_set_user_type(&current, $1); }
+    | TYPEID            {  declaration_set_type(&current, TYPEDEF); declaration_set_user_type(&current, $1); }
     ;
 
 type_qualifier : CONST
@@ -205,7 +205,15 @@ struct_or_union_specifier : struct_or_union ID LBRACE struct_declaration_list RB
         }   
     | struct_or_union ID 
         {
-           finish_user_type_from_table();
+            void* struct_ptr = find_struct_union($2);
+            if (!struct_ptr) {
+                yyerror("Struct/union defenition not found for name:");
+                yyerror($2);
+                YYERROR;
+            } else {
+                finish_user_type_from_table();
+                declaration_set_user_type(&current, struct_ptr);
+            }
         }
     ;
 
